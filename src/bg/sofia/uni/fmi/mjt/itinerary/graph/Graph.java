@@ -46,10 +46,8 @@ public class Graph {
             graph.put(current, new LinkedList<>());
 
             if (buffer.get(key).isEmpty()) { //to avoid the exception in the for loop below
-                //System.out.println(buffer.keySet().size());
                 continue;
             }
-            //System.out.println(buffer.keySet().size());
 
             for (Journey journey: buffer.get(key)) {
                 Node to = legend.get(journey.to());
@@ -61,15 +59,7 @@ public class Graph {
             }
 
         }
-        //System.out.println("graph1");
     }
-
-    /*private void calculateG(Node o) { // |x1-x2| + |y1-y2| :  x2,y2 - start Node
-        int calculate = Math.abs(o.getCity().location().x() - start.getCity().location().y()) +
-                            Math.abs(o.getCity().location().y() - start.getCity().location().y());
-
-        o.setGCost(calculate);
-    } */
 
     private BigDecimal calculateH(Node o) { // |x1-x2| + |y1-y2| :  x2,y2 - end Node
         BigDecimal calculate = BigDecimal.valueOf(
