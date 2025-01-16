@@ -1,180 +1,40 @@
-## RideRight :busstop:
+# RideRight :busstop:
 
-### Условие
+This is a solution to a travel itinerary planner problem that finds the cheapest path between two cities, possibly with transfers, using various transport types (bus, train, and plane). The problem requires the application of the A* algorithm and the use of Manhattan distance as the heuristic.
 
-Ще създадем приложение за планиране на пътуване между два града с възможни прекачвания. Използваните
-превозни средства могат да бъдат самолети, влакове или автобуси. Приложението ще
-поддържа функционалност за намиране на най-евтин начин за пътуване.
+## Task Description
 
-Имплементацията ще бъде приложима за вселена със следните особености:
+In this task, I was tasked with developing an application to plan travel between two cities, with possible transfers, using different vehicle types like planes, trains, and buses. The application finds the most cost-effective route while considering the pollution tax associated with each transport type.
 
-- Земята е плоска, с целочислени координати, изразени като метри разстояние от центъра, и граници `[- 2^31, 2^31 - 1]`.
-- Пътуването между два града винаги е успоредно на една от координатните оси (завои под прав ъгъл са позволени по време
-  на пътуване).
-- Използва се само една валута - "плосък долар".
+### Features:
 
-### Задължителни интерфейси и класове
+- **Vehicle Types**: The vehicle types are planes, trains, and buses. Each has an associated environmental tax:
+  - **Plane**: 25% of the price
+  - **Train**: 0% (no environmental tax)
+  - **Bus**: 10% of the price
+- **Cities and Locations**: Cities are defined by their name and location (on a 2D plane).
+- **Manhattan Distance**: The heuristic used in the A* algorithm is the Manhattan distance, considering that travel is constrained to axis-aligned paths.
 
-По-долу сме изброили задължителните класове и интерфейси, които трябва да съдържа решението ви. Свободни сте да добавяте
-свои класове и интерфейси, като не забравяте да следвате принципите за чист код.
-Както винаги, дефинираните в условието интерфейси **не бива да бъдат променяни**.
+### Problem Details
 
-В пакета `bg.sofia.uni.fmi.mjt.itinerary` създайте клас `RideRight`, който има конструктор, приемащ списък от всички
-директни маршрути между градове:
+The world is a flat plane, with cities having coordinates on the 2D plane. Each journey between two cities is a direct connection and has a given price. The objective is to find the cheapest path from one city to another, potentially involving transfers.
 
-```java
-public RideRight(List<Journey> schedule)
-```
+The input is a list of direct journeys (using different vehicle types), and the task is to find the cheapest path while considering the pollution tax, as well as using A* search with Manhattan distance as the heuristic.
 
-и имплементира интерфейса `ItineraryPlanner`:
+### Project Structure
 
-```java
-package bg.sofia.uni.fmi.mjt.itinerary;
+The project implements the following core components:
 
-import bg.sofia.uni.fmi.mjt.itinerary.exception.CityNotKnownException;
-import bg.sofia.uni.fmi.mjt.itinerary.exception.NoPathToDestinationException;
+- **City**: Represents a city with a name and location on the 2D plane.
+- **Journey**: Represents a direct trip between two cities using a specific vehicle type (plane, bus, or train) and its price.
+- **RideRight**: The main class responsible for finding the cheapest travel route. It implements the `ItineraryPlanner` interface and uses A* to find the optimal path.
+- **VehicleType**: Enum that defines the vehicle types (Plane, Train, Bus) along with their environmental tax rates.
 
-import java.util.SequencedCollection;
+### Algorithm Used
 
-public interface ItineraryPlanner {
+For finding the cheapest path, the project uses the **A\* algorithm** with the **Manhattan distance** heuristic. This ensures that the algorithm efficiently calculates the cheapest route considering both price and environmental impact (via pollution tax).
 
-    /**
-     * Returns a sequenced collection of Journeys representing the cheapest path from the start to the destination City.
-     *
-     * @param start         - City, from which the itinerary begins
-     * @param destination   - the City that needs to be reached
-     * @param allowTransfer - a flag parameter whether multiple Journeys with transfer can be returned as a result, or
-     *                      only a direct route is expected
-     * @throws CityNotKnownException        if the start or destination City is not present
-     *                                      in the list of provided Journeys
-     * @throws NoPathToDestinationException if there is no path satisfying the conditions
-     */
-    SequencedCollection<Journey> findCheapestPath(City start, City destination, boolean allowTransfer)
-        throws CityNotKnownException, NoPathToDestinationException;
-}
-```
-
-#### Record `Journey`
-
-Директно пътуване без прекачване между два града се моделира от следния record:
-
-```java
-public record Journey(VehicleType vehicleType, City from, City to, BigDecimal price)
-```
-
-:exclamation: Обявената цена `price` в record `Journey` е в долари и НЕ включва такса за замърсяване на околната среда.
-Тази такса е необходимо да се вземе предвид при търсенето на най-евтин маршрут, като за различните видове превозни
-средства тя е различна и се изчислява като процент от обявената цена:
-
-- Самолет: 25%
-- Влак: 0%
-- Автобус: 10%
-
-:exclamation: Възможно е между два града да има транспорт само в едната посока. За представяне на възможност за
-двупосочно пътуване, са необходими поне два `Journey` обекта.
-
-Гарантирано е, че:
-
-- В подаваните входни данни няма повторение на информация за директен маршрут между два града чрез дадено превозно
-  средство, т.е. информацията за цената е непротиворечива.
-- Всички обявени цени за пътуване са положителни числа.
-
-#### Record `City`
-
-Един град притежава име и е разположен на дадена локация. Моделира се чрез следния record:
-
-```java
-public record City(String name, Location location)
-```
-
-Гарантирано е, че:
-
-- В подаваните входни данни на една локация има точно един град.
-- Няма два града с едно и също име.
-
-#### Record `Location`
-
-Точка от пространството се моделира чрез следния record:
-
-```java
-public record Location(int x, int y)
-```
-
-**Уточнение:** Стойностите на x и y са метри разстояние от центъра.
-
-#### Enum `VehicleType`
-
-Вид превозно средство се моделира чрез следния enum, който съдържа и информация за такса за замърсяване на околната
-среда (като процент от цената за пътуване):
-
-```java
-public enum VehicleType {
-
-    PLANE(new BigDecimal("0.25")),
-    TRAIN(new BigDecimal("0")),
-    BUS(new BigDecimal("0.1"));
-
-    private final BigDecimal greenTax;
-
-    VehicleType(BigDecimal greenTax) {
-        this.greenTax = greenTax;
-    }
-
-    public BigDecimal getGreenTax() {
-        return greenTax;
-    }
-
-}
-```
-
-### Алгоритъм
-
-За намиране на най-евтин път, използвайте алгоритъма A* и евристиката
-[Manhattan distance](https://xlinux.nist.gov/dads/HTML/manhattanDistance.html).
-Следните материали могат да са ви полезни:
-
-- https://en.wikipedia.org/wiki/A*_search_algorithm
-- https://stackabuse.com/graphs-in-java-a-star-algorithm/
-- https://www.youtube.com/watch?v=ySN5Wnu88nE
-
-Ако по време на търсене срещнете съседни градове, такива, че през който и от тях да минете потенциално би било
-еднакво евтино, то изследвайте ги по азбучен ред на техните имена.
-
-При изчисляване на реалните разходи по маршрут до даден град използвайте цените, предоставени в `Journey`, и таксите за
-замърсяване на околната среда според вида превозно средство. При правене на оценка за цена до крайната точка използвайте
-обща средна цена за километър = 20 долара.
-
-### Бележки
-
-- :exclamation::exclamation: **Решения,
-  използващи [Java Stream API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/package-summary.html),
-  [lambdas](https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html), и всичко останало, което не е
-  покрито до момента, няма да се приемат за това домашно.**
-
-### Пакети
-
-```
-src
-└── bg.sofia.uni.fmi.mjt.itinerary
-    ├── exception
-    │   ├── CityNotKnownException.java
-    │   ├── NoPathToDestinationException.java
-    │   └── (...)
-    ├── vehicle
-    │   ├── VehicleType.java
-    │   └── (...)
-    ├── City.java
-    ├── ItineraryPlanner.java
-    ├── Journey.java
-    ├── Location.java
-    ├── RideRight.java
-    └── (...)
-```
-
-### Пример
-
-<details>
-  <summary>Подаден списък от маршрути между градове</summary>
+### Example Input
 
 ```java
 City sofia = new City("Sofia", new Location(0, 2000));
@@ -190,42 +50,10 @@ List<Journey> schedule = List.of(
     new Journey(BUS, sofia, blagoevgrad, new BigDecimal("20")),
     new Journey(BUS, blagoevgrad, sofia, new BigDecimal("20")),
     new Journey(BUS, sofia, plovdiv, new BigDecimal("90")),
-    new Journey(BUS, plovdiv, sofia, new BigDecimal("90")),
-    new Journey(BUS, plovdiv, kardzhali, new BigDecimal("50")),
-    new Journey(BUS, kardzhali, plovdiv, new BigDecimal("50")),
-    new Journey(BUS, plovdiv, burgas, new BigDecimal("90")),
-    new Journey(BUS, burgas, plovdiv, new BigDecimal("90")),
-    new Journey(BUS, burgas, varna, new BigDecimal("60")),
-    new Journey(BUS, varna, burgas, new BigDecimal("60")),
-    new Journey(BUS, sofia, tarnovo, new BigDecimal("150")),
-    new Journey(BUS, tarnovo, sofia, new BigDecimal("150")),
-    new Journey(BUS, plovdiv, tarnovo, new BigDecimal("40")),
-    new Journey(BUS, tarnovo, plovdiv, new BigDecimal("40")),
-    new Journey(BUS, tarnovo, ruse, new BigDecimal("70")),
-    new Journey(BUS, ruse, tarnovo, new BigDecimal("70")),
-    new Journey(BUS, varna, ruse, new BigDecimal("70")),
-    new Journey(BUS, ruse, varna, new BigDecimal("70")),
-    new Journey(PLANE, varna, burgas, new BigDecimal("200")),
-    new Journey(PLANE, burgas, varna, new BigDecimal("200")),
-    new Journey(PLANE, burgas, sofia, new BigDecimal("150")),
-    new Journey(PLANE, sofia, burgas, new BigDecimal("250")),
-    new Journey(PLANE, varna, sofia, new BigDecimal("290")),
-    new Journey(PLANE, sofia, varna, new BigDecimal("300"))
+    // Add more journeys as needed...
 );
 
 RideRight rideRight = new RideRight(schedule);
-```
-
-</details>
-
-| Извикване                                             | Резултат                                                                                                                                               |
-|:------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `rideRight.findCheapestPath(varna, kardzhali, true)`  | `[Journey{BUS, from=Varna, to=Burgas, price=60}, Journey{BUS, from=Burgas, to=Plovdiv, price=90}, Journey{BUS, from=Plovdiv, to=Kardzhali, price=50}]` |
-| `rideRight.findCheapestPath(varna, kardzhali, false)` | `NoPathToDestinationException`                                                                                                                         |
-| `rideRight.findCheapestPath(varna, burgas, false)`    | `[Journey{BUS, from=Varna, to=Burgas, price=60}]`                                                                                                      |
-
-<details>
-  <summary>Примерна диаграма с оптимални и неоптимални пътища</summary>
 
 ![Example Routes Diagram](diagrams/example-diagram.png)
 
